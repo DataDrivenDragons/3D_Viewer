@@ -52,13 +52,19 @@ void *render(void *arg)
   int i;
   Shared *shared = (Shared *) arg;
   float *triangle;
-  for (i = 0; i < 3; i =i +1) {
+  // for (i = 0; i < 10; i =i +1) {
+  while (true){
     triangle = queue_pop(shared->queue);
+    if (*triangle == 0.0){
+      std::cout << "null " << std::endl;
+      break;
+    }
     print_triangle(POP, triangle);
     add_triangle(triangle);
 
   }
-  print_global();
+  std::cout << "done " << std::endl;
+  // print_global();
   pthread_exit(NULL);
 }
 
@@ -68,6 +74,7 @@ void mydisplay() {
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
   glColor3f(0,0,1);
+  glScalef(300,300,300);
   glRotatef(2.0, anglex,0.0f,angley);
   glBegin(GL_TRIANGLES);
     for(std::vector<int>::size_type i = 0; i != global.size(); i=i+3) {
@@ -77,6 +84,7 @@ void mydisplay() {
   glEnd();
   glFlush();
   glutSwapBuffers();
+
   anglex = 0.0;
   angley = 0.0;
   glutPostRedisplay();
