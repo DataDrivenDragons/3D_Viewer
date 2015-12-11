@@ -298,7 +298,7 @@ int parseFunc(char * path, Queue * queue) {
 	fprintf(stdout, "Second to Last: %f %f %f\n", Verts.array[Verts.index-6], Verts.array[Verts.index-5], Verts.array[Verts.index-4]);
 	float * pt;
 	pt = (float *) malloc(sizeof(float));
-	pt = 0.0;
+	*pt = 0.0;
 	queue_push(queue, pt);
 	fclose(file);
 	free(pt);
