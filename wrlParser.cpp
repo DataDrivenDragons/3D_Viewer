@@ -2,37 +2,31 @@
 #include <stdio.h>
 #include <regex.h>
 #include <string.h>
+#include "utils.h"
+#include "wrlParser.h"
 
-long int BYTES_READ = 1000;
+void Vertices::createArray(void) {
+	length = 1000;
+	index = 0;
+	array = (float *) malloc(length*sizeof(float));
+}
 
-class Vertices {
-public:
-	float * array;
-	int length;
-	int index;
-	void createArray(void) {
-		length = 1000;
-		index = 0;
-		array = (float *) malloc(length*sizeof(float));
-	}
-
-	void add(float elem) {
-		index++;
-		if (index != length) {
-			array[index-1] = elem;
-		} else {
-			float * temp;
-			length = length + 1000;
-			temp = (float *) malloc(length * sizeof(float));
-			for (int i = 0; i<index-1; i++) {
-				temp[i] = array[i];
-			}
-			
-			free(array);
-			array = temp;
+void Vertices::add(float elem) {
+	index++;
+	if (index != length) {
+		array[index-1] = elem;
+	} else {
+		float * temp;
+		length = length + 1000;
+		temp = (float *) malloc(length * sizeof(float));
+		for (int i = 0; i<index-1; i++) {
+			temp[i] = array[i];
 		}
+		
+		free(array);
+		array = temp;
 	}
-};
+}
 
 void addVertex (Vertices * Verts, regmatch_t * v, char * str, float * out, int i){
 	int length = v[0].rm_eo - v[0].rm_so;
@@ -45,21 +39,22 @@ void addVertex (Vertices * Verts, regmatch_t * v, char * str, float * out, int i
 	free(newStr);
 }
 
-void pushFace (Vertices * Verts, regmatch_t * v, char * str, float * face, int i) {
+void pushFace (Vertices * Verts, regmatch_t * v, char * str, float * face, int i, Queue * queue) {
 	int length = v[0].rm_eo - v[0].rm_so;
 	char * newStr = (char *) malloc(sizeof(char)*(length+1));
 	strncpy(newStr, str+v[0].rm_so, length);
 	newStr[length] = '\0';
 	int index = strtof(newStr, NULL);
-	fprintf(stdout, "%i\n", index);
+	// fprintf(stdout, "%i\n", index);
 	index = index*3;
 	face[(i%3)*3] = Verts->array[index];
 	face[(i%3)*3+1] = Verts->array[index+1];
 	face[(i%3)*3+2] = Verts->array[index+2];
-	fprintf(stderr, "f1 %f %f %f\n", face[(i%3)*3], face[(i%3)*3+1], face[(i%3)*3+2]);
-	fprintf(stdout, "V %f %f %f\n", Verts->array[index], Verts->array[index+1], Verts->array[index+2]);
+	// fprintf(stderr, "f1 %f %f %f\n", face[(i%3)*3], face[(i%3)*3+1], face[(i%3)*3+2]);
+	// fprintf(stdout, "V %f %f %f\n", Verts->array[index], Verts->array[index+1], Verts->array[index+2]);
 	free(newStr);
-	i+=1;
+	if (i%3 == 2)
+		queue_push(queue, face);
 }
 
 
@@ -80,24 +75,9 @@ bool checkReg (regex_t * reg, char * buffer) {
 	return false;
 }
 
-int strIndex (char * buff, char * match, int length) {
-	int m_num = 0;
 
-	for (int i = 0; i<BYTES_READ; i++) {
-		if (m_num == length) {
-			return i;
-		}
-		if (buff[i] == match[m_num]) {
-			m_num++;
-		}
-		else if (buff[i] != match[m_num]) {
-			m_num = 0;
-		}
-	}
-	return BYTES_READ;
-}
-
-int parse(char * path) {
+int parseFunc(char * path, Queue * queue) {
+	long int BYTES_READ = 1000;
 	FILE *file;
 	file = fopen(path, "r");
 	if (file == NULL) {
@@ -127,7 +107,6 @@ int parse(char * path) {
 	char * vertInd;
 	char * facInd;
 	regmatch_t v[3];
-	regmatch_t f[4];
 	int offset;
 	int length;
 	int i = 0;
@@ -255,7 +234,7 @@ int parse(char * path) {
 				do {
 					ret = regexec(&regCoor, facInd+offset, 1, v, 0);
 					if (!ret) {
-						pushFace(&Verts, v, facInd+offset, faceList, i);
+						pushFace(&Verts, v, facInd+offset, faceList, i, queue);
 						offset += v[0].rm_eo;
 						i++;
 					}
@@ -276,7 +255,7 @@ int parse(char * path) {
 					do {
 						ret = regexec(&regCoor, temp2+offset, 1, v, 0);
 						if (!ret) {
-							pushFace(&Verts, v, temp2+offset, faceList, i);
+							pushFace(&Verts, v, temp2+offset, faceList, i, queue);
 							offset += v[0].rm_eo;
 							i++;
 						}
@@ -289,13 +268,13 @@ int parse(char * path) {
 					if (tempStr[0] != ' ') {
 						ret = regexec(&regCoor, tempStr, 1, v, 0);
 						if(!ret) {
-							pushFace(&Verts, v, tempStr, faceList, i);
+							pushFace(&Verts, v, tempStr, faceList, i, queue);
 							i++;
 						}
 					} else if (tempStr[10] != ' '){
 						ret = regexec(&regCoor, tempStr+9, 1, v, 0);
 						if(!ret) {
-							pushFace(&Verts, v, tempStr+9, faceList, i);
+							pushFace(&Verts, v, tempStr+9, faceList, i, queue);
 							i++;
 						}
 					}
@@ -303,7 +282,7 @@ int parse(char * path) {
 					do {
 						ret = regexec(&regCoor, buff+offset, 1, v, 0);
 						if (!ret) {
-							pushFace(&Verts, v, buff+offset, faceList, i);
+							pushFace(&Verts, v, buff+offset, faceList, i, queue);
 							offset += v[0].rm_eo;
 							i++;
 						}
@@ -322,18 +301,18 @@ int parse(char * path) {
 	return 0;
 }
 
-int main(int argc, char **argv){
+// int main(int argc, char **argv){
 
-	if (argc < 2) {
-		fputs("Too few arguments\n", stderr);
-		return 1;
-	}
+// 	if (argc < 2) {
+// 		fputs("Too few arguments\n", stderr);
+// 		return 1;
+// 	}
 
 	
-	int out = parse(argv[argc-1]);
-	if (out != 0) {
-		fprintf(stderr, "Error parsing: %i", out);
-		return 1;
-	} 
-	return 0;
-}
+// 	int out = parseFunc(argv[argc-1]);
+// 	if (out != 0) {
+// 		fprintf(stderr, "Error parsing: %i", out);
+// 		return 1;
+// 	} 
+// 	return 0;
+// }

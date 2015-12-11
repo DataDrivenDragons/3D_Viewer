@@ -3,8 +3,11 @@
 #include <GL/glut.h>
 #include <pthread.h>
 #include <iostream>
+#include <regex.h>
+#include <string.h>
 #include <vector>
 #include "utils.h"
+#include "wrlParser.h"
 
 char PUSH[] = "Pushed";
 char POP[] = "Popped";
@@ -22,44 +25,8 @@ void print_triangle(char *comment, float *triangle)
 void *parse(void *arg)
 {
   Shared *shared = (Shared *) arg;
-  float *triangle1 = (float *) malloc(9 * sizeof(float));
-  float *triangle2 = (float *) malloc(9 * sizeof(float));
-  float *triangle3 = (float *) malloc(9 * sizeof(float));
-  triangle1[0] = .5;
-  triangle1[1] = 1;
-  triangle1[2] = 1;
-  triangle1[3] = .5;
-  triangle1[4] = .5;
-  triangle1[5] = .5;
-  triangle1[6] = -.5;
-  triangle1[7] = -.5;
-  triangle1[8] = -.5;
-
-
-  triangle2[0] = .5;
-  triangle2[1] = 1;
-  triangle2[2] = 1;
-  triangle2[3] = .5;
-  triangle2[4] = .5;
-  triangle2[5] = .5;
-  triangle2[6] = 1;
-  triangle2[7] = -.5;
-  triangle2[8] = -.5;
-
-
-  triangle3[0] = .5;
-  triangle3[1] = .5;
-  triangle3[2] = 1;
-  triangle3[3] = .5;
-  triangle3[4] = -.5;
-  triangle3[5] = .5;
-  triangle3[6] = -.5;
-  triangle3[7] = -.5;
-  triangle3[8] = -.5;
-
-  queue_push(shared->queue, triangle1);
-  queue_push(shared->queue, triangle2);
-  queue_push(shared->queue, triangle3);
+  char path[] = "die.wrl";
+  parseFunc(path, shared->queue);
   pthread_exit(NULL);
 }
 
