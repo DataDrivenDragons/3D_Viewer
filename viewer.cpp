@@ -14,6 +14,10 @@ char POP[] = "Popped";
 
 // ACTUAL APPLICATION CODE
 
+static GLfloat anglex = 0.0;
+static GLfloat angley = 0.0;
+static GLfloat anglez = 0.0;
+
 void print_triangle(char *comment, float *triangle)
 {
   printf("%s (%f %f %f ) (%f %f %f ) (%f %f %f)\n", comment,
@@ -59,11 +63,12 @@ void *render(void *arg)
 }
 
 void mydisplay() {
-
+  
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
   glColor3f(0,0,1);
+  glRotatef(2.0, anglex,0.0f,angley);
   glBegin(GL_TRIANGLES);
     for(std::vector<int>::size_type i = 0; i != global.size(); i=i+3) {
       glVertex3f(global[i], global[i+1], global[i+2]); 
@@ -72,13 +77,31 @@ void mydisplay() {
   glEnd();
   glFlush();
   glutSwapBuffers();
+  anglex = 0.0;
+  angley = 0.0;
   glutPostRedisplay();
 } 
 
-// void init(void) 
-// {
-  
-// }
+void keyboard(unsigned char key, int x, int y)
+{
+   switch (key) {
+    case 'a':
+      angley = 1.0f;
+      break;
+    case 'd':
+      angley = -1.0f;
+      break;
+    case 'w':
+      anglex = 1.0f;
+      break;
+    case 's':
+      anglex = -1.0f;
+      break;
+    case 27:
+      exit(0);
+      break;
+   }
+}
 
 int main(int argc, char** argv)
 {
@@ -96,7 +119,8 @@ int main(int argc, char** argv)
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB );
   glutInitWindowSize(500, 500);
   glutCreateWindow("simple");      
-  glutDisplayFunc(mydisplay);     
+  glutDisplayFunc(mydisplay);
+  glutKeyboardFunc(keyboard);
   glutMainLoop(); 
   return 0;
 }
