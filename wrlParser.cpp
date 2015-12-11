@@ -47,13 +47,13 @@ void pushFace (Vertices * Verts, regmatch_t * v, char * str, float * face, int i
 	int index = strtof(newStr, NULL);
 	// fprintf(stdout, "%i\n", index);
 	index = index*3;
-	face[(i%3)*3] = Verts->array[index];
-	face[(i%3)*3+1] = Verts->array[index+1];
-	face[(i%3)*3+2] = Verts->array[index+2];
+	face[(i%9)] = Verts->array[index];
+	face[(i%9)+1] = Verts->array[index+1];
+	face[(i%9)+2] = Verts->array[index+2];
 	// fprintf(stderr, "f1 %f %f %f\n", face[(i%3)*3], face[(i%3)*3+1], face[(i%3)*3+2]);
 	// fprintf(stdout, "V %f %f %f\n", Verts->array[index], Verts->array[index+1], Verts->array[index+2]);
 	free(newStr);
-	if (i%3 == 2)
+	if (i%9 == 6)
 		queue_push(queue, face);
 }
 
@@ -236,7 +236,7 @@ int parseFunc(char * path, Queue * queue) {
 					if (!ret) {
 						pushFace(&Verts, v, facInd+offset, faceList, i, queue);
 						offset += v[0].rm_eo;
-						i++;
+						i+=3;
 					}
 				} while (ret == 0);
 				tempStr = (char *) malloc(sizeof(char)*11);
@@ -257,7 +257,7 @@ int parseFunc(char * path, Queue * queue) {
 						if (!ret) {
 							pushFace(&Verts, v, temp2+offset, faceList, i, queue);
 							offset += v[0].rm_eo;
-							i++;
+							i+=3;
 						}
 					} while (ret == 0);
 					free(tempStr);
@@ -269,13 +269,13 @@ int parseFunc(char * path, Queue * queue) {
 						ret = regexec(&regCoor, tempStr, 1, v, 0);
 						if(!ret) {
 							pushFace(&Verts, v, tempStr, faceList, i, queue);
-							i++;
+							i+=3;
 						}
 					} else if (tempStr[10] != ' '){
 						ret = regexec(&regCoor, tempStr+9, 1, v, 0);
 						if(!ret) {
 							pushFace(&Verts, v, tempStr+9, faceList, i, queue);
-							i++;
+							i+=3;
 						}
 					}
 					offset = 0;
@@ -284,7 +284,7 @@ int parseFunc(char * path, Queue * queue) {
 						if (!ret) {
 							pushFace(&Verts, v, buff+offset, faceList, i, queue);
 							offset += v[0].rm_eo;
-							i++;
+							i+=3;
 						}
 					} while (ret == 0);
 					strncpy(tempStr, buff+BYTES_READ-5, 5);
