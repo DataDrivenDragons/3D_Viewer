@@ -39,14 +39,12 @@ void addVertex (Vertices * Verts, regmatch_t * v, char * str, float * out, int *
 	char * newStr = (char *) malloc(sizeof(char)*(length+1));
 	strncpy(newStr, str+v[0].rm_so, length);
 	newStr[length] = '\0';
-	*i+=1;
 	out[*i%3] = strtof(newStr, NULL);
+	Verts->add(out[*i%3]);
 	fprintf(stdout, "Found: %f\n", out[*i%3]);
-	if ((*i+1)%3 == 0) {
-		Verts->add(out[0]);
-		Verts->add(out[1]);
-		Verts->add(out[2]);
-	}
+	*i+=1;
+	
+
 	free(newStr);
 }
 
@@ -151,8 +149,6 @@ int parse(char * path) {
 	Verts.createArray();
 	do {
 		res = fread(buff, 1, BYTES_READ, file);
-		// fprintf(stdout, "Bytes Read: %li\n", res); 
-		// fprintf(stdout, "Buffer: %s\n", buff);
 
 		if (!reading_faces && !done_faces) {
 			reading_faces = checkReg(&regF, buff);
@@ -182,27 +178,11 @@ int parse(char * path) {
 
 		//Match vertices in file, add vertices to Vertices. 
 		if (reading_verts && !done_verts) {
-			//( -?[0-9.]*){3}
 			if (first_verts) {
 				offset = 0;
-				// fprintf(stdout, "%s\n", vertInd);
 				do {
 					ret = regexec(&regCoor, vertInd+offset, 1, v, 0);
 					if (!ret) {
-						// length = v[0].rm_eo - v[0].rm_so;
-						// char * newStr = (char *) malloc(sizeof(char)*(length+1));
-						// strncpy(newStr, vertInd+v[0].rm_so+offset, length);
-						// newStr[length] = '\0';
-						// i+=1;
-						// // fprintf(stdout, "String: %s Length: %i\n", newStr, length);
-						// out[i%3] = strtof(newStr, NULL);
-						// if ((i+1)%3 == 0) {
-						// 	// fprintf(stdout, "%f %f %f\n", out[0], out[1], out[2]);
-						// 	Verts.add(out[0]);
-						// 	Verts.add(out[1]);
-						// 	Verts.add(out[2]);
-						// }
-						// free(newStr);
 						addVertex(&Verts, v, vertInd+offset, out, &i);
 						offset += v[0].rm_eo;
 					}
@@ -210,53 +190,38 @@ int parse(char * path) {
 				tempStr = (char *) malloc(sizeof(char)*21);
 				strncpy(tempStr, buff+BYTES_READ-10, 10);
 				tempStr[20] = '\0';
-				// fprintf(stdout, "%s\n", tempStr);
 				first_verts = false;
 			} else {
 				if (checkForEnd(buff)) {
+					char * tempInd;
+					tempInd = strstr(buff, "]");
+					length = tempInd-buff;
+					char * temp2 = (char *) malloc(sizeof(char)*length+1);
+					strncpy(temp2, buff, length);
+					temp2[length] = '\0';
+					offset = 0;
+					do {
+						ret = regexec(&regCoor, temp2+offset, 1, v, 0);
+						if (!ret) {
+							addVertex(&Verts, v, temp2+offset, out, &i);
+							offset += v[0].rm_eo;
+						}
+					} while (ret == 0);
 					free(tempStr);
+					free(temp2);
 					done_verts = true;
 					continue;
 				} else {
 					strncpy(tempStr+10, buff, 10);
-					// puts("Start");
-					// fprintf(stdout, "%s\n", tempStr);
-					// puts("End");
 					if (tempStr[0] != ' ') {
 						ret = regexec(&regCoor, tempStr, 1, v, 0);
 						if(!ret) {
 							addVertex(&Verts, v, tempStr, out, &i);
-							// length = v[0].rm_eo - v[0].rm_so;
-							// char * newStr = (char *) malloc(sizeof(char)*(length+1));
-							// strncpy(newStr, tempStr+v[0].rm_so, length);
-							// newStr[length] = '\0';
-							// i+=1;
-							// out[i%3] = strtof(newStr, NULL);
-							// fprintf(stdout, "Found: %f\n", out[i%3]);
-							// if ((i+1)%3 == 0) {
-							// 	Verts.add(out[0]);
-							// 	Verts.add(out[1]);
-							// 	Verts.add(out[2]);
-							// }
-							// free(newStr);
 						}
 					} else if (tempStr[10] != ' '){
 						ret = regexec(&regCoor, tempStr+9, 1, v, 0);
 						if(!ret) {
 							addVertex(&Verts, v, tempStr+9, out, &i);
-							// length = v[0].rm_eo - v[0].rm_so;
-							// char * newStr = (char *) malloc(sizeof(char)*(length+1));
-							// strncpy(newStr, tempStr+v[0].rm_so, length);
-							// newStr[length] = '\0';
-							// i+=1;
-							// out[i%3] = strtof(newStr, NULL);
-							// // fprintf(stdout, "Found: %f\n", out[i%3]);
-							// if ((i+1)%3 == 0) {
-							// 	Verts.add(out[0]);
-							// 	Verts.add(out[1]);
-							// 	Verts.add(out[2]);
-							// }
-							// free(newStr);
 						}
 					}
 					offset = 0;
@@ -265,32 +230,16 @@ int parse(char * path) {
 						if (!ret) {
 							addVertex(&Verts, v, buff+offset, out, &i);
 							offset += v[0].rm_eo;
-							// length = v[0].rm_eo - v[0].rm_so;
-							// char * newStr = (char *) malloc(sizeof(char)*(length+1));
-							// strncpy(newStr, buff+v[0].rm_so+offset, length);
-							// newStr[length] = '\0';
-							
-							// i+=1;
-							// fprintf(stdout, "String: %s Length: %i\n", newStr, length);
-							// out[i%3] = strtof(newStr, NULL);
-							// if ((i+1)%3 == 0) {
-							// 	Verts.add(out[0]);
-							// 	Verts.add(out[1]);
-							// 	Verts.add(out[2]);
-							// 	// fprintf(stdout, "%f %f %f\n", out[0], out[1], out[2]);
-							// }
-							// free(newStr);
 						}
 					} while (ret == 0);
 					strncpy(tempStr, buff+BYTES_READ-10, 10);
 				}
 			}
-
-
 		}
-
 	} while (res == BYTES_READ);
-
+	fprintf(stdout, "Verts length: %i\n", Verts.index);
+	fprintf(stdout, "Last Vert: %f %f %f\n", Verts.array[Verts.index-3], Verts.array[Verts.index-2],Verts.array[Verts.index-1]);
+	fprintf(stdout, "Second to Last: %f %f %f\n", Verts.array[Verts.index-6], Verts.array[Verts.index-5], Verts.array[Verts.index-4]);
 	fclose(file);
 	free (buff);
 	return 0;
