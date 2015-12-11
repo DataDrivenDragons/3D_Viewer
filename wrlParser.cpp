@@ -296,8 +296,8 @@ int parseFunc(char * path, Queue * queue) {
 	fprintf(stdout, "%f %f %f\n", Verts.array[1059*3], Verts.array[1059*3+1],  Verts.array[1059*3+2]);
 	fprintf(stdout, "Last Vert: %f %f %f\n", Verts.array[Verts.index-3], Verts.array[Verts.index-2],Verts.array[Verts.index-1]);
 	fprintf(stdout, "Second to Last: %f %f %f\n", Verts.array[Verts.index-6], Verts.array[Verts.index-5], Verts.array[Verts.index-4]);
-	faceList = NULL;
-	queue_push(queue,faceList);
+	float * pt = NULL;
+	queue_push(queue, pt);
 	fclose(file);
 	free (buff);
 	return 0;
