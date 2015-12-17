@@ -6,6 +6,7 @@
 #include <regex.h>
 #include <string.h>
 #include <vector>
+#include <math.h>
 #include "utils.h"
 #include "wrlParser.h"
 
@@ -43,6 +44,7 @@ void print_global(){
 
 void add_triangle(float *input){
   std::vector<float> v(input, input + sizeof(input)+1);
+  free(input);
   global.insert( global.end(), v.begin(), v.end() );
 }
 
@@ -55,12 +57,19 @@ void *render(void *arg)
   // for (i = 0; i < 10; i =i +1) {
   while (true){
     triangle = queue_pop(shared->queue);
-    if (*triangle == 0.0){
+    if (abs(*triangle) > 1000){
       std::cout << "null " << std::endl;
+      free(triangle);
       break;
     }
-    print_triangle(POP, triangle);
-    add_triangle(triangle);
+    float * face;
+    face = (float *) malloc(sizeof(float)*9);
+    for (int j = 0; j<9; j++) {
+      face[j] = triangle[j];
+    }
+    // free(triangle);
+    // print_triangle(POP, triangle);
+    add_triangle(face);
 
   }
   std::cout << "done " << std::endl;
@@ -69,24 +78,41 @@ void *render(void *arg)
 }
 
 void mydisplay() {
-  
+
+
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
   glColor3f(0,0,1);
-  glScalef(300,300,300);
-  glRotatef(2.0, anglex,0.0f,angley);
+
+  glLoadIdentity ();
+  // gluLookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0); 
+  // gluLookAt (0.25, 0.75, 1.0, 0.0, 0.25, 0.0, 0.0, 1.0, 0.0);
+  // glLightfv(GL_LIGHT0, GL_POSITION, lpos);
+  // glRotatef(angley, 0.0,0.0,1.0); 
+  glScalef(50,50,50);
+  // glColor3f(0,0,i%255);
   glBegin(GL_TRIANGLES);
     for(std::vector<int>::size_type i = 0; i != global.size(); i=i+3) {
+      
+      // fprintf(stdout, "Size of triangles: %f %f %f\n", global[i+2], global[i], global[i+1]);
       glVertex3f(global[i], global[i+1], global[i+2]); 
     }
 
   glEnd();
+  glColor3f(1,1,1);
+  for(std::vector<int>::size_type i = 0; i != global.size(); i=i+9) {
+      glBegin(GL_LINE_STRIP);
+      // fprintf(stdout, "Size of triangles: %f %f %f\n", global[i+2], global[i], global[i+1]);
+        glVertex3f(global[i], global[i+1], global[i+2]); 
+        glVertex3f(global[i+3], global[i+4], global[i+5]); 
+        glVertex3f(global[i+6], global[i+7], global[i+8]); 
+      glEnd();
+  }
+
   glFlush();
   glutSwapBuffers();
 
-  anglex = 0.0;
-  angley = 0.0;
   glutPostRedisplay();
 } 
 
@@ -94,10 +120,10 @@ void keyboard(unsigned char key, int x, int y)
 {
    switch (key) {
     case 'a':
-      angley = 1.0f;
+      angley += 1.0f;
       break;
     case 'd':
-      angley = -1.0f;
+      angley += -1.0f;
       break;
     case 'w':
       anglex = 1.0f;
